@@ -15,10 +15,10 @@ import (
 	"aurora-channels/internal/bridge"
 	"aurora-channels/internal/httpserver"
 	"aurora-channels/internal/telegram"
+	k8s "aurora-dispatchers-k8s/k8s"
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"
 	"aurora-dispatchers/registry"
-	k8s "aurora-k8s/k8s"
 	aurorasqlite "aurora-stores/sqlite"
 )
 

@@ -5,7 +5,7 @@ go 1.26
 require (
 	aurora-capcompute v0.0.0
 	aurora-dispatchers v0.0.0
-	aurora-k8s v0.0.0-00010101000000-000000000000
+	aurora-dispatchers-k8s v0.0.0-00010101000000-000000000000
 	aurora-stores v0.0.0
 	github.com/mattn/go-sqlite3 v1.14.46
 )
@@ -70,4 +70,4 @@ replace aurora-stores => ../aurora-stores
 
 replace capcompute => ../capcompute
 
-replace aurora-k8s => ../aurora-k8s
+replace aurora-dispatchers-k8s => ../aurora-dispatchers-k8s
