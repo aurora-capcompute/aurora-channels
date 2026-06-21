@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	"aurora-capcompute/aurora"
-	"aurora-capcompute/aurora/httpserver"
 	"aurora-channels/internal/bridge"
+	"aurora-channels/internal/httpserver"
 	"aurora-channels/internal/telegram"
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"

@@ -2,6 +2,32 @@
 
 Communication channel integrations for Aurora.
 
+## HTTP Server
+
+The REST/SSE server that `aurora-ui` connects to:
+
+```sh
+sh ../aurora-brains/agent/build.sh
+AURORA_LLM=openai go run ./cmd/aurora-http
+```
+
+Start the UI alongside:
+
+```sh
+cd ../aurora-ui
+npm start
+```
+
+Configuration:
+
+- `AURORA_SERVER_ADDR`: listen address, default `127.0.0.1:8080`.
+- `AURORA_LLM`: `fake` or `openai`, default `fake`.
+- `AURORA_DB`: Aurora SQLite path, default `aurora.db`.
+- `AURORA_GUEST_WASM`: Wasm brain path, default `../aurora-brains/agent/agent.wasm`.
+- `AURORA_MCP_SERVERS`: optional JSON object of MCP server configs.
+- `AURORA_BRAINS`: optional JSON object mapping brain IDs to Wasm paths.
+- `AURORA_WEBHOOK_SECRET`: HMAC secret for task tokens.
+
 ## Telegram
 
 ```sh
