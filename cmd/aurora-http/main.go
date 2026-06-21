@@ -17,6 +17,8 @@ import (
 	"aurora-channels/internal/httpserver"
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"
+	"aurora-dispatchers/registry"
+	k8s "aurora-k8s/k8s"
 	aurorasqlite "aurora-stores/sqlite"
 )
 
@@ -55,6 +57,11 @@ func run() error {
 		Store:      store,
 		TaskSecret: []byte(envDefault("AURORA_WEBHOOK_SECRET", "aurora-local-development-webhook-secret")),
 		MCPServers: mcpServers,
+		DispatcherRegistry: registry.New(
+			registry.InternetRegistration{},
+			registry.MCPRegistration{},
+			k8s.Registration{},
+		),
 	})
 	if err != nil {
 		_ = store.Close()

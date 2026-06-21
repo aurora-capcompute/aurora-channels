@@ -17,6 +17,8 @@ import (
 	"aurora-channels/internal/telegram"
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"
+	"aurora-dispatchers/registry"
+	k8s "aurora-k8s/k8s"
 	aurorasqlite "aurora-stores/sqlite"
 )
 
@@ -67,6 +69,11 @@ func run() error {
 		Store:      store,
 		TaskSecret: []byte(os.Getenv("AURORA_WEBHOOK_SECRET")),
 		MCPServers: mcpServers,
+		DispatcherRegistry: registry.New(
+			registry.InternetRegistration{},
+			registry.MCPRegistration{},
+			k8s.Registration{},
+		),
 	})
 	if err != nil {
 		return fmt.Errorf("create runtime: %w", err)
