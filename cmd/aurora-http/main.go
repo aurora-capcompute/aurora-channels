@@ -17,7 +17,7 @@ import (
 	"aurora-channels/internal/assembly"
 	"aurora-channels/internal/httpserver"
 	k8s "aurora-dispatchers-k8s/k8s"
-	"aurora-dispatchers/llm"
+	"aurora-dispatchers-llm/openaillm"
 	"aurora-dispatchers/mcp"
 	"aurora-dispatchers/registry"
 	"aurora-stores/memory"
@@ -34,10 +34,6 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	llmClient, err := llmFromEnv()
-	if err != nil {
-		return err
-	}
 	store, err := aurorasqlite.Open(envDefault("AURORA_DB", "aurora.db"))
 	if err != nil {
 		return fmt.Errorf("open durable store: %w", err)
@@ -53,7 +49,8 @@ func run() error {
 		return err
 	}
 	dispatchers := assembly.NewDispatcherProvider(
-		registry.Services{LLM: llmClient, MCPServers: mcpServers},
+		registry.Services{MCPServers: mcpServers},
+		openaillm.Registration{},
 		registry.InternetRegistration{},
 		registry.MCPRegistration{},
 		k8s.Registration{},
@@ -128,17 +125,6 @@ func brainRegistryFromEnv() (aurora.BrainProvider, error) {
 		return nil, fmt.Errorf("decode AURORA_BRAINS: %w", err)
 	}
 	return assembly.NewBrainProvider(envDefault("AURORA_DEFAULT_BRAIN", aurora.DefaultBrainID), paths)
-}
-
-func llmFromEnv() (llm.Client, error) {
-	switch strings.ToLower(envDefault("AURORA_LLM", "fake")) {
-	case "fake":
-		return llm.NewFakeClient(os.Getenv("AURORA_FAKE_READ_URL")), nil
-	case "openai":
-		return llm.NewOpenAIClient(llm.OpenAIConfigFromEnv())
-	default:
-		return nil, fmt.Errorf("unsupported AURORA_LLM: %s", os.Getenv("AURORA_LLM"))
-	}
 }
 
 func envDefault(name string, fallback string) string {

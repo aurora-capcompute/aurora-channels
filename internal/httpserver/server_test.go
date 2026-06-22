@@ -18,24 +18,31 @@ import (
 
 	"aurora-capcompute/aurora"
 	"aurora-channels/internal/assembly"
-	"aurora-dispatchers/llm"
+	"aurora-dispatchers-llm/openaillm"
 	"aurora-dispatchers/registry"
 	"aurora-stores/memory"
 )
 
-type finalLLM struct{}
-
-func (finalLLM) Chat(context.Context, llm.ChatRequest) (llm.ChatResponse, error) {
-	return llm.ChatResponse{Content: `[{"action":"final","content":{"answer":"server answer"}}]`}, nil
-}
-
 func TestRESTAndSSELifecycle(t *testing.T) {
+	llmServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{
+				"message": map[string]string{
+					"content": `[{"action":"final","content":{"answer":"server answer"}}]`,
+				},
+			}},
+		})
+	}))
+	t.Cleanup(llmServer.Close)
+
 	brains, err := assembly.SingleBrainProvider(buildGuest(t))
 	if err != nil {
 		t.Fatalf("brain provider: %v", err)
 	}
 	dispatchers := assembly.NewDispatcherProvider(
-		registry.Services{LLM: finalLLM{}},
+		registry.Services{},
+		openaillm.Registration{},
 	)
 	store := memory.NewStore()
 	runtime, err := aurora.NewRuntime(context.Background(), aurora.Config{
@@ -61,7 +68,12 @@ func TestRESTAndSSELifecycle(t *testing.T) {
 	defer httpServer.Close()
 
 	thread := requestJSON[aurora.ThreadSnapshot](t, http.MethodPost, httpServer.URL+"/v1/threads",
-		map[string]any{"manifest": map[string]any{"version": 1, "capabilities": []any{}}},
+		map[string]any{"manifest": map[string]any{"version": 2, "capabilities": []any{
+			map[string]any{"name": "openai.chat", "hidden": true, "settings": map[string]any{
+				"base_url": llmServer.URL, "api_key_env": "OPENAI_API_KEY", "api_key_optional": true,
+				"default_model": "test", "require_approval": false,
+			}},
+		}}},
 		http.StatusCreated)
 	if thread.ID == "" {
 		t.Fatal("thread id is empty")

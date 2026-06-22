@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"aurora-capcompute/aurora"
@@ -17,7 +16,7 @@ import (
 	"aurora-channels/internal/httpserver"
 	"aurora-channels/internal/telegram"
 	k8s "aurora-dispatchers-k8s/k8s"
-	"aurora-dispatchers/llm"
+	"aurora-dispatchers-llm/openaillm"
 	"aurora-dispatchers/mcp"
 	"aurora-dispatchers/registry"
 	"aurora-stores/memory"
@@ -40,11 +39,6 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	llmClient, err := llmFromEnv()
-	if err != nil {
-		return err
-	}
-
 	brains, err := brainRegistryFromEnv()
 	if err != nil {
 		return err
@@ -65,7 +59,8 @@ func run() error {
 	}
 
 	dispatchers := assembly.NewDispatcherProvider(
-		registry.Services{LLM: llmClient, MCPServers: mcpServers},
+		registry.Services{MCPServers: mcpServers},
+		openaillm.Registration{},
 		registry.InternetRegistration{},
 		registry.MCPRegistration{},
 		k8s.Registration{},
@@ -115,17 +110,6 @@ func run() error {
 
 	log.Printf("Telegram bot started")
 	return b.Run(ctx)
-}
-
-func llmFromEnv() (llm.Client, error) {
-	switch strings.ToLower(envOr("AURORA_LLM", "fake")) {
-	case "fake":
-		return llm.NewFakeClient(envOr("AURORA_FAKE_READ_URL", "https://example.com")), nil
-	case "openai":
-		return llm.NewOpenAIClient(llm.OpenAIConfigFromEnv())
-	default:
-		return nil, fmt.Errorf("unknown AURORA_LLM value: %s", os.Getenv("AURORA_LLM"))
-	}
 }
 
 func brainRegistryFromEnv() (aurora.BrainProvider, error) {
