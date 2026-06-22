@@ -14,11 +14,13 @@ import (
 	"time"
 
 	"aurora-capcompute/aurora"
+	"aurora-channels/internal/assembly"
 	"aurora-channels/internal/httpserver"
 	k8s "aurora-dispatchers-k8s/k8s"
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"
 	"aurora-dispatchers/registry"
+	"aurora-stores/memory"
 	aurorasqlite "aurora-stores/sqlite"
 )
 
@@ -50,18 +52,20 @@ func run() error {
 		_ = store.Close()
 		return err
 	}
+	dispatchers := assembly.NewDispatcherProvider(
+		registry.Services{LLM: llmClient, MCPServers: mcpServers},
+		registry.InternetRegistration{},
+		registry.MCPRegistration{},
+		k8s.Registration{},
+	)
 	runtime, err := aurora.NewRuntime(ctx, aurora.Config{
-		Brains:     brains,
-		LLM:        llmClient,
-		TenantID:   envDefault("AURORA_TENANT_ID", aurora.DefaultTenantID),
-		Store:      store,
-		TaskSecret: []byte(envDefault("AURORA_WEBHOOK_SECRET", "aurora-local-development-webhook-secret")),
-		MCPServers: mcpServers,
-		DispatcherRegistry: registry.New(
-			registry.InternetRegistration{},
-			registry.MCPRegistration{},
-			k8s.Registration{},
-		),
+		Brains:       brains,
+		Dispatchers:  dispatchers,
+		StateStore:   store,
+		TaskStore:    store,
+		SessionStore: memory.NewSessionStore[string, aurora.RunContext](),
+		TenantID:     envDefault("AURORA_TENANT_ID", aurora.DefaultTenantID),
+		TaskSecret:   []byte(envDefault("AURORA_WEBHOOK_SECRET", "aurora-local-development-webhook-secret")),
 	})
 	if err != nil {
 		_ = store.Close()
@@ -112,10 +116,10 @@ func mcpServersFromEnv() (map[string]mcp.ServerConfig, error) {
 	return servers, nil
 }
 
-func brainRegistryFromEnv() (*aurora.BrainRegistry, error) {
+func brainRegistryFromEnv() (aurora.BrainProvider, error) {
 	raw := strings.TrimSpace(os.Getenv("AURORA_BRAINS"))
 	if raw == "" {
-		return aurora.SingleBrainRegistry(
+		return assembly.SingleBrainProvider(
 			envDefault("AURORA_GUEST_WASM", "../aurora-brains/agent/agent.wasm"),
 		)
 	}
@@ -123,7 +127,7 @@ func brainRegistryFromEnv() (*aurora.BrainRegistry, error) {
 	if err := json.Unmarshal([]byte(raw), &paths); err != nil {
 		return nil, fmt.Errorf("decode AURORA_BRAINS: %w", err)
 	}
-	return aurora.NewBrainRegistry(envDefault("AURORA_DEFAULT_BRAIN", aurora.DefaultBrainID), paths)
+	return assembly.NewBrainProvider(envDefault("AURORA_DEFAULT_BRAIN", aurora.DefaultBrainID), paths)
 }
 
 func llmFromEnv() (llm.Client, error) {

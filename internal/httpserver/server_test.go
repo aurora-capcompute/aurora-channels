@@ -17,7 +17,10 @@ import (
 	"time"
 
 	"aurora-capcompute/aurora"
+	"aurora-channels/internal/assembly"
 	"aurora-dispatchers/llm"
+	"aurora-dispatchers/registry"
+	"aurora-stores/memory"
 )
 
 type finalLLM struct{}
@@ -27,10 +30,22 @@ func (finalLLM) Chat(context.Context, llm.ChatRequest) (llm.ChatResponse, error)
 }
 
 func TestRESTAndSSELifecycle(t *testing.T) {
+	brains, err := assembly.SingleBrainProvider(buildGuest(t))
+	if err != nil {
+		t.Fatalf("brain provider: %v", err)
+	}
+	dispatchers := assembly.NewDispatcherProvider(
+		registry.Services{LLM: finalLLM{}},
+	)
+	store := memory.NewStore()
 	runtime, err := aurora.NewRuntime(context.Background(), aurora.Config{
-		WasmPath: buildGuest(t),
-		LLM:      finalLLM{},
-		IDSource: sequentialIDs(),
+		Brains:       brains,
+		Dispatchers:  dispatchers,
+		StateStore:   store,
+		TaskStore:    store,
+		SessionStore: memory.NewSessionStore[string, aurora.RunContext](),
+		TaskSecret:   []byte("test-task-secret"),
+		IDSource:     sequentialIDs(),
 	})
 	if err != nil {
 		t.Fatalf("new runtime: %v", err)
@@ -51,11 +66,11 @@ func TestRESTAndSSELifecycle(t *testing.T) {
 	if thread.ID == "" {
 		t.Fatal("thread id is empty")
 	}
-	brains := requestJSON[struct {
+	brainList := requestJSON[struct {
 		Brains []aurora.BrainArtifact `json:"brains"`
 	}](t, http.MethodGet, httpServer.URL+"/v1/brains", nil, http.StatusOK)
-	if len(brains.Brains) != 1 || brains.Brains[0].Digest == "" {
-		t.Fatalf("brains = %+v", brains.Brains)
+	if len(brainList.Brains) != 1 || brainList.Brains[0].Digest == "" {
+		t.Fatalf("brains = %+v", brainList.Brains)
 	}
 
 	response, err := http.Get(httpServer.URL + "/v1/threads/" + thread.ID + "/events")

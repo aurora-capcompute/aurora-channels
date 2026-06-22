@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"aurora-capcompute/aurora"
+	"aurora-channels/internal/assembly"
 	"aurora-channels/internal/bridge"
 	"aurora-channels/internal/httpserver"
 	"aurora-channels/internal/telegram"
@@ -19,6 +20,7 @@ import (
 	"aurora-dispatchers/llm"
 	"aurora-dispatchers/mcp"
 	"aurora-dispatchers/registry"
+	"aurora-stores/memory"
 	aurorasqlite "aurora-stores/sqlite"
 )
 
@@ -62,18 +64,20 @@ func run() error {
 		}
 	}
 
+	dispatchers := assembly.NewDispatcherProvider(
+		registry.Services{LLM: llmClient, MCPServers: mcpServers},
+		registry.InternetRegistration{},
+		registry.MCPRegistration{},
+		k8s.Registration{},
+	)
 	rt, err := aurora.NewRuntime(ctx, aurora.Config{
-		Brains:     brains,
-		LLM:        llmClient,
-		TenantID:   envOr("AURORA_TENANT_ID", ""),
-		Store:      store,
-		TaskSecret: []byte(os.Getenv("AURORA_WEBHOOK_SECRET")),
-		MCPServers: mcpServers,
-		DispatcherRegistry: registry.New(
-			registry.InternetRegistration{},
-			registry.MCPRegistration{},
-			k8s.Registration{},
-		),
+		Brains:       brains,
+		Dispatchers:  dispatchers,
+		StateStore:   store,
+		TaskStore:    store,
+		SessionStore: memory.NewSessionStore[string, aurora.RunContext](),
+		TenantID:     envOr("AURORA_TENANT_ID", aurora.DefaultTenantID),
+		TaskSecret:   []byte(envOr("AURORA_WEBHOOK_SECRET", "aurora-local-development-webhook-secret")),
 	})
 	if err != nil {
 		return fmt.Errorf("create runtime: %w", err)
@@ -124,16 +128,16 @@ func llmFromEnv() (llm.Client, error) {
 	}
 }
 
-func brainRegistryFromEnv() (*aurora.BrainRegistry, error) {
+func brainRegistryFromEnv() (aurora.BrainProvider, error) {
 	if raw := os.Getenv("AURORA_BRAINS"); raw != "" {
 		var paths map[string]string
 		if err := json.Unmarshal([]byte(raw), &paths); err != nil {
 			return nil, fmt.Errorf("parse AURORA_BRAINS: %w", err)
 		}
-		return aurora.NewBrainRegistry(envOr("AURORA_DEFAULT_BRAIN", ""), paths)
+		return assembly.NewBrainProvider(envOr("AURORA_DEFAULT_BRAIN", aurora.DefaultBrainID), paths)
 	}
 	wasmPath := envOr("AURORA_GUEST_WASM", "../aurora-brains/agent/agent.wasm")
-	return aurora.SingleBrainRegistry(wasmPath)
+	return assembly.SingleBrainProvider(wasmPath)
 }
 
 func defaultManifest() aurora.Manifest {
