@@ -68,8 +68,8 @@ func run() error {
 	rt, err := aurora.NewRuntime(ctx, aurora.Config{
 		Brains:       brains,
 		Dispatchers:  dispatchers,
-		StateStore:   store,
-		TaskStore:    store,
+		Log:          store,
+		Leases:       store,
 		SessionStore: memory.NewSessionStore[string, aurora.RunContext](),
 		TenantID:     envOr("AURORA_TENANT_ID", aurora.DefaultTenantID),
 		TaskSecret:   []byte(envOr("AURORA_WEBHOOK_SECRET", "aurora-local-development-webhook-secret")),
