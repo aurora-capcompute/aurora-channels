@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"aurora-capcompute/aurora"
+	"github.com/aurora-capcompute/aurora-capcompute/aurora"
 )
 
 type Server struct {

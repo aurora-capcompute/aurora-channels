@@ -1,14 +1,14 @@
-module aurora-channels
+module github.com/aurora-capcompute/aurora-channels
 
 go 1.26
 
 require (
-	aurora-capcompute v0.0.0
-	aurora-dispatchers v0.0.0
-	aurora-dispatchers-k8s v0.0.0-00010101000000-000000000000
-	aurora-dispatchers-llm v0.0.0
-	aurora-stores v0.0.0
-	capcompute v0.0.0
+	github.com/aurora-capcompute/aurora-capcompute v0.0.0-00010101000000-000000000000
+	github.com/aurora-capcompute/aurora-dispatchers v0.0.0-00010101000000-000000000000
+	github.com/aurora-capcompute/aurora-dispatchers-k8s v0.0.0-00010101000000-000000000000
+	github.com/aurora-capcompute/aurora-dispatchers-llm v0.0.0-00010101000000-000000000000
+	github.com/aurora-capcompute/aurora-stores v0.0.0-00010101000000-000000000000
+	github.com/aurora-capcompute/capcompute v0.0.0-00010101000000-000000000000
 	github.com/mattn/go-sqlite3 v1.14.46
 )
 
@@ -68,14 +68,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace aurora-capcompute => ../aurora-capcompute
 
-replace aurora-dispatchers => ../aurora-dispatchers
 
-replace aurora-stores => ../aurora-stores
 
-replace capcompute => ../capcompute
 
-replace aurora-dispatchers-k8s => ../aurora-dispatchers-k8s
 
-replace aurora-dispatchers-llm => ../aurora-dispatchers-llm

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"aurora-capcompute/aurora"
-	"aurora-channels/internal/telegram"
+	"github.com/aurora-capcompute/aurora-capcompute/aurora"
+	"github.com/aurora-capcompute/aurora-channels/internal/telegram"
 )
 
 type Config struct {

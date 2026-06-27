@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"aurora-capcompute/aurora"
+	"github.com/aurora-capcompute/aurora-capcompute/aurora"
 )
 
 type BrainProvider struct {

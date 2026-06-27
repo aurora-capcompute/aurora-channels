@@ -16,11 +16,11 @@ import (
 	"testing"
 	"time"
 
-	"aurora-capcompute/aurora"
-	"aurora-channels/internal/assembly"
-	"aurora-dispatchers-llm/openaillm"
-	"aurora-dispatchers/registry"
-	"aurora-stores/memory"
+	"github.com/aurora-capcompute/aurora-capcompute/aurora"
+	"github.com/aurora-capcompute/aurora-channels/internal/assembly"
+	"github.com/aurora-capcompute/aurora-dispatchers-llm/openaillm"
+	"github.com/aurora-capcompute/aurora-dispatchers/registry"
+	"github.com/aurora-capcompute/aurora-stores/memory"
 )
 
 func TestRESTAndSSELifecycle(t *testing.T) {

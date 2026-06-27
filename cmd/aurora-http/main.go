@@ -13,15 +13,15 @@ import (
 	"syscall"
 	"time"
 
-	"aurora-capcompute/aurora"
-	"aurora-channels/internal/assembly"
-	"aurora-channels/internal/httpserver"
-	k8s "aurora-dispatchers-k8s/k8s"
-	"aurora-dispatchers-llm/openaillm"
-	"aurora-dispatchers/mcp"
-	"aurora-dispatchers/registry"
-	"aurora-stores/memory"
-	aurorasqlite "aurora-stores/sqlite"
+	"github.com/aurora-capcompute/aurora-capcompute/aurora"
+	"github.com/aurora-capcompute/aurora-channels/internal/assembly"
+	"github.com/aurora-capcompute/aurora-channels/internal/httpserver"
+	k8s "github.com/aurora-capcompute/aurora-dispatchers-k8s/k8s"
+	"github.com/aurora-capcompute/aurora-dispatchers-llm/openaillm"
+	"github.com/aurora-capcompute/aurora-dispatchers/mcp"
+	"github.com/aurora-capcompute/aurora-dispatchers/registry"
+	"github.com/aurora-capcompute/aurora-stores/memory"
+	aurorasqlite "github.com/aurora-capcompute/aurora-stores/sqlite"
 )
 
 func main() {
