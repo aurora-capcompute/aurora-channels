@@ -57,7 +57,7 @@ func (s *Server) createThread(w http.ResponseWriter, request *http.Request) {
 		writeError(w, err)
 		return
 	}
-	thread, err := s.runtime.CreateThread(body.Manifest)
+	thread, err := s.runtime.CreateThread(body.Manifest, nil)
 	if err != nil {
 		writeError(w, err)
 		return

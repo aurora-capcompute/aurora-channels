@@ -19,8 +19,9 @@ type mockRuntime struct {
 	threads map[string]aurora.ThreadSnapshot
 	nextID  int
 
-	onCreateRun func(threadID, message string) (aurora.RunSnapshot, error)
-	subscribers map[string][]chan aurora.Event
+	onCreateRun     func(threadID, message string) (aurora.RunSnapshot, error)
+	ListThreadsFunc func() []aurora.ThreadSummary
+	subscribers     map[string][]chan aurora.Event
 }
 
 func newMockRuntime() *mockRuntime {
@@ -30,13 +31,13 @@ func newMockRuntime() *mockRuntime {
 	}
 }
 
-func (m *mockRuntime) CreateThread(manifest aurora.Manifest) (aurora.ThreadSnapshot, error) {
+func (m *mockRuntime) CreateThread(manifest aurora.Manifest, tags map[string]string) (aurora.ThreadSnapshot, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.nextID++
 	id := fmt.Sprintf("thr_%d", m.nextID)
 	snap := aurora.ThreadSnapshot{
-		ThreadSummary: aurora.ThreadSummary{ID: id, Manifest: manifest},
+		ThreadSummary: aurora.ThreadSummary{ID: id, Manifest: manifest, Tags: tags},
 	}
 	m.threads[id] = snap
 	return snap, nil
@@ -70,16 +71,20 @@ func (m *mockRuntime) Emit(threadID string, event aurora.Event) {
 	}
 }
 
-func (m *mockRuntime) ListThreads() []aurora.ThreadSummary { return nil }
-func (m *mockRuntime) Brains() []aurora.BrainArtifact      { return nil }
-func (m *mockRuntime) GetThread(string) (aurora.ThreadSnapshot, error) {
-	return aurora.ThreadSnapshot{}, nil
+func (m *mockRuntime) ListThreads() []aurora.ThreadSummary {
+	if m.ListThreadsFunc != nil {
+		return m.ListThreadsFunc()
+	}
+	return nil
 }
-func (m *mockRuntime) GetRun(string) (aurora.RunSnapshot, error) {
-	return aurora.RunSnapshot{}, nil
-}
-func (m *mockRuntime) Journal(string) ([]aurora.JournalEntry, error) { return nil, nil }
-func (m *mockRuntime) Tasks(string) ([]aurora.TaskSnapshot, error)   { return nil, nil }
+func (m *mockRuntime) Brains() []aurora.BrainArtifact                              { return nil }
+func (m *mockRuntime) SetBrains(context.Context, []aurora.BrainSource) error       { return nil }
+func (m *mockRuntime) GetThread(string) (aurora.ThreadSnapshot, error)              { return aurora.ThreadSnapshot{}, nil }
+func (m *mockRuntime) GetRun(string) (aurora.RunSnapshot, error)                   { return aurora.RunSnapshot{}, nil }
+func (m *mockRuntime) Journal(string) ([]aurora.JournalEntry, error)               { return nil, nil }
+func (m *mockRuntime) CallGraph(string) (aurora.RunGraphNode, error)               { return aurora.RunGraphNode{}, nil }
+func (m *mockRuntime) ThreadGraph(string) (aurora.ThreadGraph, error)              { return aurora.ThreadGraph{}, nil }
+func (m *mockRuntime) Tasks(string) ([]aurora.TaskSnapshot, error)                 { return nil, nil }
 func (m *mockRuntime) ResolveTask(string, string, aurora.Resolution) (aurora.TaskSnapshot, error) {
 	return aurora.TaskSnapshot{}, nil
 }
@@ -170,7 +175,9 @@ func TestBridgeCompletedRunSendsAnswer(t *testing.T) {
 
 	b.handleMessage(ctx, msg)
 
-	threadID, found, _ := store.ThreadForChat(42)
+	b.mu.Lock()
+	threadID, found := b.chatThreads[42]
+	b.mu.Unlock()
 	if !found {
 		t.Fatal("thread not created for chat")
 	}
@@ -244,29 +251,93 @@ func TestBridgeSubscribesBeforeCreateRun(t *testing.T) {
 	}
 }
 
-func TestChunkMessage(t *testing.T) {
-	short := "hello"
-	chunks := chunkMessage(short, 4096)
-	if len(chunks) != 1 || chunks[0] != short {
-		t.Fatalf("expected single chunk, got %v", chunks)
+func TestBridgeNewThreadPerChat(t *testing.T) {
+	rt := newMockRuntime()
+	ft := newFakeTelegram()
+	defer ft.server.Close()
+
+	bot := telegram.NewBot("TEST_TOKEN")
+	setBotBaseURL(bot, ft.server.URL)
+
+	store, err := OpenStore(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	b := New(Config{
+		Runtime:         rt,
+		Bot:             bot,
+		Store:           store,
+		DefaultManifest: aurora.Manifest{Version: aurora.ManifestVersion},
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Two different chats each get their own thread.
+	b.handleMessage(ctx, &telegram.Message{Chat: telegram.Chat{ID: 1, Type: "private"}, Text: "hi"})
+	b.handleMessage(ctx, &telegram.Message{Chat: telegram.Chat{ID: 2, Type: "private"}, Text: "hi"})
+
+	b.mu.Lock()
+	thr1, ok1 := b.chatThreads[1]
+	thr2, ok2 := b.chatThreads[2]
+	b.mu.Unlock()
+
+	if !ok1 || !ok2 {
+		t.Fatal("expected threads for both chats")
+	}
+	if thr1 == thr2 {
+		t.Fatal("expected distinct threads for distinct chats")
 	}
 
-	long := ""
-	for i := 0; i < 100; i++ {
-		long += fmt.Sprintf("Paragraph %d content here.\n\n", i)
+	// Tag must carry the chat binding.
+	rt.mu.Lock()
+	snap1 := rt.threads[thr1]
+	rt.mu.Unlock()
+	if snap1.Tags[tagChatID] != "1" {
+		t.Fatalf("expected tag %s=1, got %q", tagChatID, snap1.Tags[tagChatID])
 	}
-	chunks = chunkMessage(long, 200)
-	for _, chunk := range chunks {
-		if len(chunk) > 200 {
-			t.Fatalf("chunk exceeds limit: %d bytes", len(chunk))
-		}
+}
+
+func TestBridgeRestoresThreadsFromLog(t *testing.T) {
+	// Simulate a runtime that already has a thread from a previous run,
+	// tagged with a chat ID. New() should seed chatThreads from ListThreads.
+	rt := newMockRuntime()
+	rt.threads["thr_existing"] = aurora.ThreadSnapshot{
+		ThreadSummary: aurora.ThreadSummary{
+			ID:   "thr_existing",
+			Tags: map[string]string{tagChatID: "99"},
+		},
 	}
-	rejoined := ""
-	for _, chunk := range chunks {
-		rejoined += chunk
+	rt.ListThreadsFunc = func() []aurora.ThreadSummary {
+		return []aurora.ThreadSummary{rt.threads["thr_existing"].ThreadSummary}
 	}
-	if rejoined != long {
-		t.Fatal("chunks do not reassemble to original")
+
+	ft := newFakeTelegram()
+	defer ft.server.Close()
+	bot := telegram.NewBot("TEST_TOKEN")
+	setBotBaseURL(bot, ft.server.URL)
+
+	store, err := OpenStore(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	b := New(Config{
+		Runtime:         rt,
+		Bot:             bot,
+		Store:           store,
+		DefaultManifest: aurora.Manifest{Version: aurora.ManifestVersion},
+	})
+
+	b.mu.Lock()
+	threadID, found := b.chatThreads[99]
+	b.mu.Unlock()
+
+	if !found || threadID != "thr_existing" {
+		t.Fatalf("expected chatThreads[99]=thr_existing, got %q found=%v", threadID, found)
 	}
 }
 
