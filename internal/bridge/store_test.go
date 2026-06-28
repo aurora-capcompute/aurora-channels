@@ -2,34 +2,6 @@ package bridge
 
 import "testing"
 
-func TestStoreThreadMapping(t *testing.T) {
-	store, err := OpenStore(":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer store.Close()
-
-	_, found, err := store.ThreadForChat(42)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if found {
-		t.Fatal("expected no thread for unknown chat")
-	}
-
-	if err := store.SaveChatThread(42, "thr_1"); err != nil {
-		t.Fatal(err)
-	}
-
-	threadID, found, err := store.ThreadForChat(42)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !found || threadID != "thr_1" {
-		t.Fatalf("got threadID=%q found=%v", threadID, found)
-	}
-}
-
 func TestStoreTaskToken(t *testing.T) {
 	store, err := OpenStore(":memory:")
 	if err != nil {

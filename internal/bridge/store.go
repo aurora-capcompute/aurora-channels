@@ -18,11 +18,6 @@ func OpenStore(path string) (*BridgeStore, error) {
 	}
 	db.SetMaxOpenConns(1)
 	if _, err := db.Exec(`
-CREATE TABLE IF NOT EXISTS chat_threads (
-	chat_id    INTEGER PRIMARY KEY,
-	thread_id  TEXT NOT NULL,
-	created_at TEXT NOT NULL
-);
 CREATE TABLE IF NOT EXISTS task_tokens (
 	task_id       TEXT PRIMARY KEY,
 	chat_id       INTEGER NOT NULL,
@@ -38,25 +33,6 @@ CREATE TABLE IF NOT EXISTS task_tokens (
 
 func (s *BridgeStore) Close() error {
 	return s.db.Close()
-}
-
-func (s *BridgeStore) ThreadForChat(chatID int64) (string, bool, error) {
-	var threadID string
-	err := s.db.QueryRow(
-		`SELECT thread_id FROM chat_threads WHERE chat_id=?`, chatID,
-	).Scan(&threadID)
-	if err == sql.ErrNoRows {
-		return "", false, nil
-	}
-	return threadID, err == nil, err
-}
-
-func (s *BridgeStore) SaveChatThread(chatID int64, threadID string) error {
-	_, err := s.db.Exec(
-		`INSERT OR REPLACE INTO chat_threads (chat_id, thread_id, created_at) VALUES (?, ?, ?)`,
-		chatID, threadID, time.Now().UTC().Format(time.RFC3339),
-	)
-	return err
 }
 
 func (s *BridgeStore) SaveTaskToken(taskID string, chatID int64, messageID int, webhookToken string) error {

@@ -6,12 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/aurora-capcompute/aurora-capcompute/aurora"
 	"github.com/aurora-capcompute/aurora-channels/internal/telegram"
 )
+
+const tagChatID = "telegram:chat_id"
 
 type Config struct {
 	Runtime         aurora.Runtime
@@ -27,17 +30,32 @@ type Bridge struct {
 	defaultManifest aurora.Manifest
 
 	mu            sync.Mutex
+	// chatThreads maps Telegram chat ID → the most recently active thread ID
+	// for that chat. Populated from the log on startup and updated in-memory
+	// as new threads are created. Multiple threads per chat are allowed; this
+	// tracks whichever was last active.
+	chatThreads   map[int64]string
 	subscriptions map[string]func()
 }
 
 func New(config Config) *Bridge {
-	return &Bridge{
+	b := &Bridge{
 		runtime:         config.Runtime,
 		bot:             config.Bot,
 		store:           config.Store,
 		defaultManifest: config.DefaultManifest,
+		chatThreads:     make(map[int64]string),
 		subscriptions:   make(map[string]func()),
 	}
+	// Seed chatThreads from threads already in the log so we survive restarts.
+	for _, t := range config.Runtime.ListThreads() {
+		if raw, ok := t.Tags[tagChatID]; ok {
+			if chatID, err := strconv.ParseInt(raw, 10, 64); err == nil {
+				b.chatThreads[chatID] = t.ID
+			}
+		}
+	}
+	return b
 }
 
 func (b *Bridge) Run(ctx context.Context) error {
@@ -74,27 +92,28 @@ func (b *Bridge) Run(ctx context.Context) error {
 func (b *Bridge) handleMessage(ctx context.Context, msg *telegram.Message) {
 	chatID := msg.Chat.ID
 
-	threadID, found, err := b.store.ThreadForChat(chatID)
-	if err != nil {
-		log.Printf("store lookup chat %d: %v", chatID, err)
-		return
-	}
+	b.mu.Lock()
+	threadID, found := b.chatThreads[chatID]
+	b.mu.Unlock()
+
 	if !found {
-		thread, createErr := b.runtime.CreateThread(b.defaultManifest)
+		thread, createErr := b.runtime.CreateThread(b.defaultManifest, map[string]string{
+			tagChatID: strconv.FormatInt(chatID, 10),
+		})
 		if createErr != nil {
 			log.Printf("create thread for chat %d: %v", chatID, createErr)
 			b.bot.SendMessage(chatID, "Failed to create conversation.", nil)
 			return
 		}
 		threadID = thread.ID
-		if err := b.store.SaveChatThread(chatID, threadID); err != nil {
-			log.Printf("save chat-thread mapping: %v", err)
-		}
+		b.mu.Lock()
+		b.chatThreads[chatID] = threadID
+		b.mu.Unlock()
 	}
 
 	b.subscribeThread(ctx, chatID, threadID)
 
-	_, err = b.runtime.CreateRun(threadID, msg.Text, nil)
+	_, err := b.runtime.CreateRun(threadID, msg.Text, nil)
 	if err != nil {
 		if errors.Is(err, aurora.ErrConflict) {
 			b.bot.SendMessage(chatID, "Still working on your previous request.", nil)
