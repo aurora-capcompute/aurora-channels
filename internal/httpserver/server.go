@@ -50,14 +50,7 @@ func (s *Server) routes() {
 }
 
 func (s *Server) createThread(w http.ResponseWriter, request *http.Request) {
-	var body struct {
-		Manifest aurora.Manifest `json:"manifest"`
-	}
-	if err := decodeJSON(request, &body); err != nil {
-		writeError(w, err)
-		return
-	}
-	thread, err := s.runtime.CreateThread(body.Manifest, nil)
+	thread, err := s.runtime.CreateThread(nil)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -84,14 +77,14 @@ func (s *Server) getThread(w http.ResponseWriter, request *http.Request) {
 
 func (s *Server) createRun(w http.ResponseWriter, request *http.Request) {
 	var body struct {
-		Content             string                    `json:"content"`
-		CapabilityOverrides []aurora.CapabilityConfig `json:"capability_overrides,omitempty"`
+		Content  string          `json:"content"`
+		Manifest aurora.Manifest `json:"manifest"`
 	}
 	if err := decodeJSON(request, &body); err != nil {
 		writeError(w, err)
 		return
 	}
-	run, err := s.runtime.CreateRun(request.PathValue("threadID"), strings.TrimSpace(body.Content), body.CapabilityOverrides)
+	run, err := s.runtime.CreateRun(request.PathValue("threadID"), strings.TrimSpace(body.Content), body.Manifest)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -158,14 +151,13 @@ func (s *Server) stopRun(w http.ResponseWriter, request *http.Request) {
 
 func (s *Server) retryRun(w http.ResponseWriter, request *http.Request) {
 	var body struct {
-		Mode                aurora.RetryMode          `json:"mode"`
-		CapabilityOverrides []aurora.CapabilityConfig `json:"capability_overrides,omitempty"`
+		Mode aurora.RetryMode `json:"mode"`
 	}
 	if err := decodeJSON(request, &body); err != nil {
 		writeError(w, err)
 		return
 	}
-	run, err := s.runtime.Retry(request.PathValue("runID"), body.Mode, body.CapabilityOverrides)
+	run, err := s.runtime.Retry(request.PathValue("runID"), body.Mode)
 	if err != nil {
 		writeError(w, err)
 		return

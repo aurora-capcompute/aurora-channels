@@ -29,7 +29,7 @@ type Bridge struct {
 	store           *BridgeStore
 	defaultManifest aurora.Manifest
 
-	mu            sync.Mutex
+	mu sync.Mutex
 	// chatThreads maps Telegram chat ID → the most recently active thread ID
 	// for that chat. Populated from the log on startup and updated in-memory
 	// as new threads are created. Multiple threads per chat are allowed; this
@@ -97,7 +97,7 @@ func (b *Bridge) handleMessage(ctx context.Context, msg *telegram.Message) {
 	b.mu.Unlock()
 
 	if !found {
-		thread, createErr := b.runtime.CreateThread(b.defaultManifest, map[string]string{
+		thread, createErr := b.runtime.CreateThread(map[string]string{
 			tagChatID: strconv.FormatInt(chatID, 10),
 		})
 		if createErr != nil {
@@ -113,7 +113,7 @@ func (b *Bridge) handleMessage(ctx context.Context, msg *telegram.Message) {
 
 	b.subscribeThread(ctx, chatID, threadID)
 
-	_, err := b.runtime.CreateRun(threadID, msg.Text, nil)
+	_, err := b.runtime.CreateRun(threadID, msg.Text, b.defaultManifest)
 	if err != nil {
 		if errors.Is(err, aurora.ErrConflict) {
 			b.bot.SendMessage(chatID, "Still working on your previous request.", nil)

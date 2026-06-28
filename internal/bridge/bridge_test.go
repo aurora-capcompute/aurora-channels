@@ -31,19 +31,19 @@ func newMockRuntime() *mockRuntime {
 	}
 }
 
-func (m *mockRuntime) CreateThread(manifest aurora.Manifest, tags map[string]string) (aurora.ThreadSnapshot, error) {
+func (m *mockRuntime) CreateThread(tags map[string]string) (aurora.ThreadSnapshot, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.nextID++
 	id := fmt.Sprintf("thr_%d", m.nextID)
 	snap := aurora.ThreadSnapshot{
-		ThreadSummary: aurora.ThreadSummary{ID: id, Manifest: manifest, Tags: tags},
+		ThreadSummary: aurora.ThreadSummary{ID: id, Tags: tags},
 	}
 	m.threads[id] = snap
 	return snap, nil
 }
 
-func (m *mockRuntime) CreateRun(threadID string, message string, overrides []aurora.CapabilityConfig) (aurora.RunSnapshot, error) {
+func (m *mockRuntime) CreateRun(threadID string, message string, _ aurora.Manifest) (aurora.RunSnapshot, error) {
 	if m.onCreateRun != nil {
 		return m.onCreateRun(threadID, message)
 	}
@@ -77,19 +77,25 @@ func (m *mockRuntime) ListThreads() []aurora.ThreadSummary {
 	}
 	return nil
 }
-func (m *mockRuntime) Brains() []aurora.BrainArtifact                              { return nil }
-func (m *mockRuntime) SetBrains(context.Context, []aurora.BrainSource) error       { return nil }
-func (m *mockRuntime) GetThread(string) (aurora.ThreadSnapshot, error)              { return aurora.ThreadSnapshot{}, nil }
-func (m *mockRuntime) GetRun(string) (aurora.RunSnapshot, error)                   { return aurora.RunSnapshot{}, nil }
-func (m *mockRuntime) Journal(string) ([]aurora.JournalEntry, error)               { return nil, nil }
-func (m *mockRuntime) CallGraph(string) (aurora.RunGraphNode, error)               { return aurora.RunGraphNode{}, nil }
-func (m *mockRuntime) ThreadGraph(string) (aurora.ThreadGraph, error)              { return aurora.ThreadGraph{}, nil }
-func (m *mockRuntime) Tasks(string) ([]aurora.TaskSnapshot, error)                 { return nil, nil }
+func (m *mockRuntime) Brains() []aurora.BrainArtifact                        { return nil }
+func (m *mockRuntime) SetBrains(context.Context, []aurora.BrainSource) error { return nil }
+func (m *mockRuntime) GetThread(string) (aurora.ThreadSnapshot, error) {
+	return aurora.ThreadSnapshot{}, nil
+}
+func (m *mockRuntime) GetRun(string) (aurora.RunSnapshot, error)     { return aurora.RunSnapshot{}, nil }
+func (m *mockRuntime) Journal(string) ([]aurora.JournalEntry, error) { return nil, nil }
+func (m *mockRuntime) CallGraph(string) (aurora.RunGraphNode, error) {
+	return aurora.RunGraphNode{}, nil
+}
+func (m *mockRuntime) ThreadGraph(string) (aurora.ThreadGraph, error) {
+	return aurora.ThreadGraph{}, nil
+}
+func (m *mockRuntime) Tasks(string) ([]aurora.TaskSnapshot, error) { return nil, nil }
 func (m *mockRuntime) ResolveTask(string, string, aurora.Resolution) (aurora.TaskSnapshot, error) {
 	return aurora.TaskSnapshot{}, nil
 }
 func (m *mockRuntime) Stop(string) (aurora.RunSnapshot, error) { return aurora.RunSnapshot{}, nil }
-func (m *mockRuntime) Retry(string, aurora.RetryMode, []aurora.CapabilityConfig) (aurora.RunSnapshot, error) {
+func (m *mockRuntime) Retry(string, aurora.RetryMode) (aurora.RunSnapshot, error) {
 	return aurora.RunSnapshot{}, nil
 }
 func (m *mockRuntime) Close(context.Context) error { return nil }
