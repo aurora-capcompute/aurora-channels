@@ -3,12 +3,12 @@ module github.com/aurora-capcompute/aurora-channels
 go 1.26
 
 require (
-	github.com/aurora-capcompute/aurora-capcompute v0.0.0-20260627193321-a32bedd67498
-	github.com/aurora-capcompute/aurora-dispatchers v0.0.0-20260627193302-a66a00a26cc6
-	github.com/aurora-capcompute/aurora-dispatchers-k8s v0.0.0-20260627160311-911710992088
-	github.com/aurora-capcompute/aurora-dispatchers-llm v0.0.0-20260627160311-f3e7c7a3ea5f
-	github.com/aurora-capcompute/aurora-stores v0.0.0-20260627160311-4c01cddf149d
-	github.com/aurora-capcompute/capcompute v0.0.0-20260627192717-954ff0270676
+	github.com/aurora-capcompute/aurora-capcompute v0.0.0-20260629161353-f5d77c15d56a
+	github.com/aurora-capcompute/aurora-dispatchers v0.0.0-20260629161346-52a96ac6ce45
+	github.com/aurora-capcompute/aurora-dispatchers-k8s v0.0.0-20260629161726-99e98510a775
+	github.com/aurora-capcompute/aurora-dispatchers-llm v0.0.0-20260629161728-89f9917b4689
+	github.com/aurora-capcompute/aurora-stores v0.0.0-20260629161752-bfe30a60b688
+	github.com/aurora-capcompute/capcompute v0.0.0-20260627172717-954ff0270676
 	github.com/mattn/go-sqlite3 v1.14.46
 )
 
@@ -67,9 +67,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-
-
-
-
-

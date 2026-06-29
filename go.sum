@@ -1,3 +1,15 @@
+github.com/aurora-capcompute/aurora-capcompute v0.0.0-20260629161353-f5d77c15d56a h1:EugVeUOWcHo5/rC9mWChRXlw7BgXjayZrjF0uVPoHx0=
+github.com/aurora-capcompute/aurora-capcompute v0.0.0-20260629161353-f5d77c15d56a/go.mod h1:SZ0HrOMfCVx3uBpiZNJyg6/M3xY+7ndVMWKv0PaEJTA=
+github.com/aurora-capcompute/aurora-dispatchers v0.0.0-20260629161346-52a96ac6ce45 h1:NutDdHyPUyDfXDk2LztgjlqSBvbpjnE4Ienr63x0PhU=
+github.com/aurora-capcompute/aurora-dispatchers v0.0.0-20260629161346-52a96ac6ce45/go.mod h1:KWmwX3cgtkGXreqN/HU9d+ML6eyDFfwIrU8528XKWEk=
+github.com/aurora-capcompute/aurora-dispatchers-k8s v0.0.0-20260629161726-99e98510a775 h1:VNTMhGoOZZh52kxgkHrOLppSbLMAMXRx1Aq2SeQVhtM=
+github.com/aurora-capcompute/aurora-dispatchers-k8s v0.0.0-20260629161726-99e98510a775/go.mod h1:POs5CFwild5K38AsgDO6ZyZRDU2XG0wyRdGWwUd0tr0=
+github.com/aurora-capcompute/aurora-dispatchers-llm v0.0.0-20260629161728-89f9917b4689 h1:vaGZSiUoxStk5auT2qqU2ojnlpsl1Z+/mMcVFXq5vdo=
+github.com/aurora-capcompute/aurora-dispatchers-llm v0.0.0-20260629161728-89f9917b4689/go.mod h1:OigwCdUCdaElGIr/Q8O4+aSEInBlIY1pm63YsywGKXM=
+github.com/aurora-capcompute/aurora-stores v0.0.0-20260629161752-bfe30a60b688 h1:qk7NeLqrW4beyMfcmUrx1jM5O373Ej6AmgtPqq6MBU0=
+github.com/aurora-capcompute/aurora-stores v0.0.0-20260629161752-bfe30a60b688/go.mod h1:7px0K6x8T6Y9d//VXKYs+qSkHEZsg5Z6iaOCVz2z+tQ=
+github.com/aurora-capcompute/capcompute v0.0.0-20260627172717-954ff0270676 h1:KNTXKfuUJgT6xnRSnTL4IYe2E87bXrr01ay7rJwmylo=
+github.com/aurora-capcompute/capcompute v0.0.0-20260627172717-954ff0270676/go.mod h1:mj6yFasv226xeH9QkiUm72zWDEhTlWAFks4IfWj/C0Y=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -87,8 +99,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
-github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834 h1:ZF+QBjOI+tILZjBaFj3HgFonKXUcwgJ4djLb6i42S3Q=
 github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834/go.mod h1:m9ymHTgNSEjuxvw8E7WWe4Pl4hZQHXONY8wE6dMLaRk=
 github.com/tetratelabs/wazero v1.9.0 h1:IcZ56OuxrtaEz8UYNRHBrUa9bYeX9oVY93KspZZBf/I=
