@@ -22,12 +22,8 @@ func NewDispatcherProvider(services registry.Services, registrations ...registry
 	}
 }
 
-func (p *DispatcherProvider) Normalize(name string, settings json.RawMessage) (json.RawMessage, error) {
-	return p.registry.Normalize(name, settings)
-}
-
-func (p *DispatcherProvider) IsSubset(name string, parent, child json.RawMessage) error {
-	return p.registry.IsSubset(name, parent, child)
+func (p *DispatcherProvider) Normalize(toolType string, settings json.RawMessage) (json.RawMessage, error) {
+	return p.registry.Normalize(toolType, settings)
 }
 
 func (p *DispatcherProvider) NewDispatcher(
@@ -35,11 +31,14 @@ func (p *DispatcherProvider) NewDispatcher(
 	_ aurora.RunContext,
 	manifest aurora.Manifest,
 ) (dispatcher.Dispatcher[aurora.RunContext], error) {
-	entries := make([]registry.Entry, 0, len(manifest.Capabilities))
-	for _, capability := range manifest.Capabilities {
+	leaf := manifest.LeafTools()
+	entries := make([]registry.Entry, 0, len(leaf))
+	for _, tool := range leaf {
 		entries = append(entries, registry.Entry{
-			Name:     capability.Name,
-			Settings: capability.Settings,
+			Name:     tool.Name,
+			Type:     tool.Type,
+			Settings: tool.Settings,
+			Hidden:   tool.Hidden,
 		})
 	}
 	config, err := p.registry.Build(ctx, entries, p.services)

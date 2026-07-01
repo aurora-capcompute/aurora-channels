@@ -68,8 +68,8 @@ func TestRESTAndSSELifecycle(t *testing.T) {
 	defer httpServer.Close()
 
 	thread := requestJSON[aurora.ThreadSnapshot](t, http.MethodPost, httpServer.URL+"/v1/threads",
-		map[string]any{"manifest": map[string]any{"version": 2, "capabilities": []any{
-			map[string]any{"name": "openai.chat", "hidden": true, "settings": map[string]any{
+		map[string]any{"manifest": map[string]any{"version": 2, "tools": []any{
+			map[string]any{"name": "llm", "type": "core.openaiApi", "hidden": true, "settings": map[string]any{
 				"base_url": llmServer.URL, "api_key_env": "OPENAI_API_KEY", "api_key_optional": true,
 				"default_model": "test", "require_approval": false,
 			}},
